@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Steganography Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .mode-selector {
+            display: flex;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            background: #f5f5f5;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .mode-btn.active {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .mode-btn:hover:not(.active) {
+            background: #e0e0e0;
+        }
+        
+        .section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .file-input {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input input[type=file] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-input-label:hover {
+            background: #e9ecef;
+            border-color: #4CAF50;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            margin-top: 10px;
+        }
+        
+        .download-btn:hover {
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 Steganography Tool</h1>
+            <p>Hide and extract secret messages in images</p>
+        </div>
+        
+        <div class="content">
+            <div class="mode-selector">
+                <button class="mode-btn active" onclick="switchMode('encode')">
+                    📝 Encode Message
+                </button>
+                <button class="mode-btn" onclick="switchMode('decode')">
+                    🔍 Decode Message
+                </button>
+            </div>
+            
+            <!-- Encode Section -->
+            <div id="encode-section" class="section active">
+                <form id="encode-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Select Image:</label>
+                        <div class="file-input">
+                            <input type="file" id="encode-image" accept="image/*" required>
+                            <label for="encode-image" class="file-input-label">
+                                📁 Click to select an image file
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Secret Message:</label>
+                        <textarea id="encode-message" placeholder="Enter your secret message here..." required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">🔐 Encode Message</button>
+                </form>
+                
+                <div class="loading" id="encode-loading">
+                    <div class="spinner"></div>
+                    <p>Encoding message...</p>
+                </div>
+                
+                <div id="encode-result" class="result"></div>
+            </div>
+            
+            <!-- Decode Section -->
+            <div id="decode-section" class="section">
+                <form id="decode-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Select Encoded Image:</label>
+                        <div class="file-input">
+                            <input type="file" id="decode-image" accept="image/*" required>
+                            <label for="decode-image" class="file-input-label">
+                                📁 Click to select an encoded image
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn">🔍 Extract Hidden Message</button>
+                </form>
+                
+                <div class="loading" id="decode-loading">
+                    <div class="spinner"></div>
+                    <p>Decoding message...</p>
+                </div>
+                
+                <div id="decode-result" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchMode(mode) {
+            // Update buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update sections
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            document.getElementById(mode + '-section').classList.add('active');
+            
+            // Clear previous results
+            document.getElementById('encode-result').style.display = 'none';
+            document.getElementById('decode-result').style.display = 'none';
+        }
+        
+        // Update file input labels
+        document.getElementById('encode-image').addEventListener('change', function(e) {
+            const label = document.querySelector('label[for="encode-image"]');
+            label.textContent = e.target.files[0] ? '✅ ' + e.target.files[0].name : '📁 Click to select an image file';
+        });
+        
+        document.getElementById('decode-image').addEventListener('change', function(e) {
+            const label = document.querySelector('label[for="decode-image"]');
+            label.textContent = e.target.files[0] ? '✅ ' + e.target.files[0].name : '📁 Click to select an encoded image';
+        });
+        
+        // Handle encode form
+        document.getElementById('encode-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('encode-loading');
+            const result = document.getElementById('encode-result');
+            const formData = new FormData();
+            
+            const imageFile = document.getElementById('encode-image').files[0];
+            const message = document.getElementById('encode-message').value;
+            
+            if (!imageFile || !message) {
+                showResult('encode', false, 'Please select an image and enter a message');
+                return;
+            }
+            
+            formData.append('image', imageFile);
+            formData.append('message', message);
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch('/encode', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                loading.style.display = 'none';
+                
+                if (data.success) {
+                    showResult('encode', true, data.message);
+                    
+                    // Create download button
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'btn download-btn';
+                    downloadBtn.innerHTML = '💾 Download Encoded Image';
+                    downloadBtn.onclick = function() {
+                        downloadImage(data.image_data, 'encoded_image.png');
+                    };
+                    
+                    result.appendChild(downloadBtn);
+                } else {
+                    showResult('encode', false, data.message);
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                showResult('encode', false, 'Network error: ' + error.message);
+            }
+        });
+        
+        // Handle decode form
+        document.getElementById('decode-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('decode-loading');
+            const result = document.getElementById('decode-result');
+            const formData = new FormData();
+            
+            const imageFile = document.getElementById('decode-image').files[0];
+            
+            if (!imageFile) {
+                showResult('decode', false, 'Please select an encoded image');
+                return;
+            }
+            
+            formData.append('image', imageFile);
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch('/decode', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                loading.style.display = 'none';
+                
+                if (data.success) {
+                    showResult('decode', true, 'Hidden message found!');
+                    
+                    // Add decoded message
+                    const messageDiv = document.createElement('div');
+                    messageDiv.style.marginTop = '15px';
+                    messageDiv.innerHTML = '<strong>Decoded Message:</strong><br><textarea readonly style="margin-top: 10px;">' + data.decoded_message + '</textarea>';
+                    result.appendChild(messageDiv);
+                } else {
+                    showResult('decode', false, data.message);
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                showResult('decode', false, 'Network error: ' + error.message);
+            }
+        });
+        
+        // Handle convert form
+        document.getElementById('convert-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('convert-loading');
+            const result = document.getElementById('convert-result');
+            const formData = new FormData();
+            
+            const imageFile = document.getElementById('convert-image').files[0];
+            
+            if (!imageFile) {
+                showResult('convert', false, 'Please select an image to convert');
+                return;
+            }
+            
+            // Check if already PNG
+            if (imageFile.name.toLowerCase().endsWith('.png')) {
+                showResult('convert', false, 'Image is already in PNG format');
+                return;
+            }
+            
+            formData.append('image', imageFile);
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                loading.style.display = 'none';
+                
+                if (data.success) {
+                    showResult('convert', true, data.message);
+                    
+                    // Create download button
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'btn download-btn';
+                    downloadBtn.innerHTML = '💾 Download PNG Image';
+                    downloadBtn.onclick = function() {
+                        downloadImage(data.image_data, data.filename);
+                    };
+                    
+                    result.appendChild(downloadBtn);
+                } else {
+                    showResult('convert', false, data.message);
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                showResult('convert', false, 'Network error: ' + error.message);
+            }
+        });
+        
+        function showResult(mode, success, message) {
+            const result = document.getElementById(mode + '-result');
+            result.className = 'result ' + (success ? 'success' : 'error');
+            result.innerHTML = message;
+            result.style.display = 'block';
+        }
+        
+        function downloadImage(base64Data, filename) {
+            const link = document.createElement('a');
+            link.href = 'data:image/png;base64,' + base64Data;
+            link.download = filename;
+            link.click();
+        }
+    </script>
+</body>
+</html>
