@@ -36,8 +36,8 @@ stegano-tool/
 
 1. **Clone this repository**  
    ```bash
-   git clone https://github.com/your-username/stegano-tool.git
-   cd stegano-tool
+   git clone https://github.com/Crepco/Steganography-
+   cd Steganography-
    ```
 
 2. **Create a virtual environment (recommended)**  
